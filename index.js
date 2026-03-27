@@ -3,11 +3,12 @@ import morgan from "morgan";
 import axios from "axios";
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(morgan("combined"));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // Home route
 app.get("/", (req, res) => {
@@ -56,10 +57,18 @@ app.get("/weather", (req, res) => {
 
 // Weather Result (API call)
 app.post("/weather", async (req, res) => {
-  const city = req.body.city;
+  const city = (req.body.city || req.query.city || "").trim();
+
+  if (!city) {
+    return res.status(400).send(`
+      <h1>❌ Error</h1>
+      <p>City is required.</p>
+      <a href="/weather">Go Back</a>
+    `);
+  }
 
   try {
-    const apiKey = "255bb555531b2034ca94f04358e22fba";
+    const apiKey = process.env.OPENWEATHER_API_KEY || "255bb555531b2034ca94f04358e22fba";
 
     const response = await axios.get(
       `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
